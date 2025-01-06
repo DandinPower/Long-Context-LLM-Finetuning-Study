@@ -41,6 +41,17 @@ This study explores cost-effective finetuning using **commodity-level hardware**
 - **FlashAttention2** for efficient attention mechanisms. ([Reference](https://arxiv.org/abs/2307.08691))
 - **ZeRO Offload** to store static memory in DRAM. ([Reference](https://arxiv.org/abs/2101.06840))
 
+## 📊 **Results**
+
+### Setup: **4×A6000 (48GB GPUs)**
+| Metric                  | Value         |
+|-------------------------|---------------|
+| **Model**               | Llama3.1 8B  |
+| **Context Length**      | 128000          |
+| **Peak VRAM Memory(MiB)**    | 24128.66     |
+| **Peak DRAM Memory(GiB)**    | 317.53       |
+| **Throughput(token/s)**          | 1775.17 |
+| **Batch Size**          | 1            |
 
 ## ⚙️ **Installation**
 
@@ -163,15 +174,3 @@ for decoder_layer in self.layers[:self.config.num_hidden_layers]:
         )
     hidden_states = layer_outputs[0]
 ```
-
-## 📊 **Results**
-
-### Setup: **4×A6000 (48GB GPUs)**
-| Metric                  | Value         |
-|-------------------------|---------------|
-| **Model**               | Llama3.1 8B  |
-| **Context Length**      | TBD          |
-| **Peak VRAM Memory**    | TBD          |
-| **Peak DRAM Memory**    | TBD          |
-| **Throughput**          | TBD tokens/s |
-| **Batch Size**          | 1            |
