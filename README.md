@@ -38,20 +38,16 @@ This study explores cost-effective finetuning using **commodity-level hardware**
 ### **4. Optimization Techniques**
 - **Liger kernel** for efficient computation. ([Reference](https://github.com/linkedin/Liger-Kernel))
 - **Offloaded Gradient Checkpointing** (via modified `unsloth`) to move activation memory to system RAM. ([Reference](https://github.com/unslothai/unsloth-zoo/blob/main/unsloth_zoo/gradient_checkpointing.py#L145))
-- **FlashAttention2** for efficient attention mechanisms. ([Reference](https://arxiv.org/abs/2307.08691))
+- **FlashAttention2** FlashAttention2 provides efficient attention mechanisms, but it is only supported on GPUs from the Ampere generation onward (e.g., V100 GPUs are not supported). ([Reference](https://arxiv.org/abs/2307.08691))
 - **ZeRO Offload** to store static memory in DRAM. ([Reference](https://arxiv.org/abs/2101.06840))
 
 ## 📊 **Results**
 
-### Setup: **4×A6000 (48GB GPUs)**
-| Metric                  | Value         |
-|-------------------------|---------------|
-| **Model**               | Llama3.1 8B  |
-| **Context Length**      | 128000          |
-| **Peak VRAM Memory(MiB)**    | 24128.66     |
-| **Peak DRAM Memory(GiB)**    | 317.53       |
-| **Throughput(token/s)**          | 1775.17 |
-| **Batch Size**          | 1            |
+| Setup                 | Model         | Context Length | Peak VRAM Memory (MiB) | Peak DRAM Memory (GiB) | Throughput (token/s) | Batch Size |
+|-----------------------|---------------|----------------|-------------------------|-------------------------|-----------------------|------------|
+| **4×A6000** | Llama3.1 8B   | 128000         | 24128.66               | 317.53                 | 1775.17              | 1          |
+| **8×V100**  | Llama3.1 8B   | 32768            | 7711.63                    | 286.43   | 2793.22                  | 1        |
+| **8×V100**  | Llama3.1 8B   | 49152            | 10794.13                    | 351.68   | 2342.40                  | 1        |
 
 ## ⚙️ **Installation**
 
