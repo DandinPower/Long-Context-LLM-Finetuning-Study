@@ -1,0 +1,9 @@
+torch==2.5.1
+transformers==4.47.1
+deepspeed==0.16.2
+accelerate==1.2.1
+liger-kernel-nightly
+huggingface_hub
+torch_tb_profiler
+matplotlib
+wheel
