@@ -119,7 +119,7 @@ class DeepSpeedTrainer:
         print(f"[RESULT] Throughput(total): {throughput:.2f} (token/s)")
 
         snapshot = torch.cuda.memory._snapshot()
-        with open(f"./{SNAP_SHOT_DIRS}/{get_snap_shot_name(args)}.pickle", 'wb') as f:
+        with open(f"./{SNAP_SHOT_DIRS}/{get_snap_shot_name(args)}_rank{args.global_rank}.pickle", 'wb') as f:
             dump(snapshot, f)
 
 if __name__ == "__main__":
