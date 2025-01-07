@@ -112,11 +112,11 @@ class DeepSpeedTrainer:
         avg_iteration_latency = (total_latency / len(iteration_latency)) * args.gradient_accumulation_steps
         total_tokens = args.train_batch_size * args.max_seq_len
         throughput = total_tokens / avg_iteration_latency
-        print(f"[RESULT] Peak VRAM Usage(per gpu): {max_memory / 1024**2:.2f} MB")
-        print(f"[RESULT] Avg Iteration Latency(total): {avg_iteration_latency:.2f} s")
-        print(f"[RESULT] Each Iteration Latency: {iteration_latency}")
-        print(f"[RESULT] Tokens(total): {total_tokens}")
-        print(f"[RESULT] Throughput(total): {throughput:.2f} (token/s)")
+        print_rank_0(f"[RESULT] Peak VRAM Usage(per gpu): {max_memory / 1024**2:.2f} MB", args.global_rank)
+        print_rank_0(f"[RESULT] Avg Iteration Latency(total): {avg_iteration_latency:.2f} s", args.global_rank)
+        print_rank_0(f"[RESULT] Each Iteration Latency (rank0): {iteration_latency}", args.global_rank)
+        print_rank_0(f"[RESULT] Tokens(total): {total_tokens}", args.global_rank)
+        print_rank_0(f"[RESULT] Throughput(total): {throughput:.2f} (token/s)", args.global_rank)
 
         snapshot = torch.cuda.memory._snapshot()
         with open(f"./{SNAP_SHOT_DIRS}/{get_snap_shot_name(args)}_rank{args.global_rank}.pickle", 'wb') as f:
