@@ -79,11 +79,25 @@ else:
     torch_amp_custom_bwd = torch.amp.custom_bwd(device_type="cuda")
 
 class Unsloth_Offloaded_Gradient_Checkpointer(torch.autograd.Function):
+    """
+    This class is inspired by or based on the `Unsloth_Offloaded_Gradient_Checkpointer` implementation.
+
+    Original code licensed under LGPL.
+    Description of the original code: Saves VRAM by smartly offloading to RAM with minimal performance impact.
+
+    Modifications:
+    - Add support to multiple cuda device -> replace hard coded "cuda:0"
+    - Updated documentation for clarity and adjusted logic for specific performance needs.
+
+    Original Source: https://github.com/unslothai/unsloth-zoo/blob/main/unsloth_zoo/gradient_checkpointing.py#L145
+
+    License: LGPL
+    """
     @staticmethod
     @torch_amp_custom_fwd
     def forward(ctx, forward_function, hidden_states, *args):
         device = hidden_states.device
-        saved_hidden_states = hidden_states.to("cpu", non_blocking=True)
+        saved_hidden_states = hidden_states.to("cpu", non_blocking = True)
         with torch.no_grad():
             output = forward_function(hidden_states, *args)
         ctx.save_for_backward(saved_hidden_states)
@@ -91,17 +105,20 @@ class Unsloth_Offloaded_Gradient_Checkpointer(torch.autograd.Function):
         ctx.args = args
         ctx.device = device
         return output
+    pass
 
     @staticmethod
     @torch_amp_custom_bwd
     def backward(ctx, dY):
         (hidden_states,) = ctx.saved_tensors
-        hidden_states = hidden_states.to(ctx.device, non_blocking=True).detach()
+        hidden_states = hidden_states.to(ctx.device, non_blocking = True).detach()
         hidden_states.requires_grad_(True)
         with torch.enable_grad():
-            output = ctx.forward_function(hidden_states, *ctx.args)
+            (output,) = ctx.forward_function(hidden_states, *ctx.args)
         torch.autograd.backward(output, dY)
-        return (None, hidden_states.grad,) + (None,) * len(ctx.args)
+        return (None, hidden_states.grad,) + (None,)*len(ctx.args)
+    pass
+pass
 ```
 
 ### **2. Modifications to `src/transformers/models/llama/modeling_llama.py`**

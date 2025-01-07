@@ -1,17 +1,17 @@
-NUM_GPUS=8
+NUM_GPUS=1
 
 # MODEL_NAME=HuggingFaceTB/SmolLM2-360M-Instruct
-# MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
+MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
-MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
+# MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
 
-SYSTEM_TYPE=cpu_gpus8_8B
+SYSTEM_TYPE=cpu_gpus8_1B
 DS_CONFIG_PATH=configs/cpu.json
 
 PER_DEVICE_TRAIN_BATCH_SIZE=1
 NUM_TRAIN_ITERATIONS=2
 GRADIENT_ACCUMULATION_STEPS=1
-MAX_SEQ_LENGTH=49152
+MAX_SEQ_LENGTH=196000
 
 LEARNING_RATE=1e-4
 WEIGHT_DECAY=0.01
@@ -28,4 +28,4 @@ deepspeed --num_gpus $NUM_GPUS training.py --model_name $MODEL_NAME --world_size
     --liger_kernel \
     --gradient_checkpointing \
     --offload_gradient_checkpointing \
-    # --flash_attn_2 \
+    --flash_attn_2 \

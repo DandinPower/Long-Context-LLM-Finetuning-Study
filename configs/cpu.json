@@ -9,13 +9,13 @@
         "enabled": false
     },
     "fp16": {
-        "enabled": true,
+        "enabled": false,
         "loss_scale_window": 100,
         "initial_scale_power": 6,
         "hysteresis": 1
     },
     "bf16": {
-        "enabled": false
+        "enabled": true
     },
     "zero_optimization": {
         "stage": 3,
