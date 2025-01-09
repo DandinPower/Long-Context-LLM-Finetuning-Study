@@ -1,17 +1,19 @@
 NUM_GPUS=1
 
 # MODEL_NAME=HuggingFaceTB/SmolLM2-360M-Instruct
-MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
+# MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
+MODEL_NAME=Qwen/Qwen2.5-0.5B-Instruct
+# MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
 
-SYSTEM_TYPE=cpu_gpus8_1B
+SYSTEM_TYPE=cpu_gpus1_0-5B
 DS_CONFIG_PATH=configs/cpu.json
 
 PER_DEVICE_TRAIN_BATCH_SIZE=1
 NUM_TRAIN_ITERATIONS=2
 GRADIENT_ACCUMULATION_STEPS=1
-MAX_SEQ_LENGTH=196000
+MAX_SEQ_LENGTH=512
 
 LEARNING_RATE=1e-4
 WEIGHT_DECAY=0.01
