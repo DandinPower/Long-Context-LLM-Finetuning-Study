@@ -82,7 +82,7 @@ This study explores cost-effective finetuning using **commodity-level hardware**
   9. Enable advanced optimization techniques:
       - `--liger_kernel` for Liger Kernel.
       - `--gradient_checkpointing` for on-GPU gradient checkpointing.
-      - `offload_gradient_checkpointing` to offload checkpointed values to the CPU.
+      - `--offload_gradient_checkpointing` is used to further offload checkpointed values to the CPU. Keep --gradient_checkpointing enabled, as it patches the original PyTorch checkpoint function.
       - `--flash_attn_2` for Flash Attention 2 (Ampere GPUs and newer only).
 
 ### **2. DeepSpeed Configuration**
