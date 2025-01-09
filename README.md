@@ -62,128 +62,65 @@ This study explores cost-effective finetuning using **commodity-level hardware**
     pip install flash-attn
     ```
 
-## 🔧 **Source Code Modifications**
+## 🚀 **Run the Experiments**
 
-### **1. Modifications to `transformers/modeling_utils.py`**
-Add support for **offloaded gradient checkpointing**:
+### **1. Configure Settings**
+- Most configuration settings are defined in `run.sh`. Additional configurations for DeepSpeed and ZeRO are found in `configs/cpu.json`.
+- Key configurations in `run.sh`:
+  1. **`MODEL_NAME`**: Specify the model name available on the Hugging Face Hub to use as the base model.
+  2. **`NUM_GPUS`**: Adjust to the number of GPUs available to enable distributed training using DeepSpeed ZeRO and ZeRO-Offload.
+  3. **`SYSTEM_TYPE`**: Used for snapshot output naming.
+  4. **`PER_DEVICE_TRAIN_BATCH_SIZE`**: Sets the micro-batch size for each device; the total batch size is `PER_DEVICE_TRAIN_BATCH_SIZE × NUM_GPUS`.
+  5. **`GRADIENT_ACCUMULATION_STEPS`**: Number of forward/backward passes to accumulate gradients before updating weights.
+  6. **`MAX_SEQ_LENGTH`**: The desired context length for training.
+  7. **Optimization Parameters**:
+      - `LEARNING_RATE=1e-4`
+      - `WEIGHT_DECAY=0.01`
+      - `BETA_0=0.9`
+      - `BETA_1=0.95`
+  8. **`NUM_TRAIN_ITERATION`**: Number of iterations for the experiment. To ensure correct statistical results, set this to a value greater than 2, as the first iteration is discarded as a warm-up.
+  9. Enable advanced optimization techniques:
+      - `--liger_kernel` for Liger Kernel.
+      - `--gradient_checkpointing` for on-GPU gradient checkpointing.
+      - `offload_gradient_checkpointing` to offload checkpointed values to the CPU.
+      - `--flash_attn_2` for Flash Attention 2 (Ampere GPUs and newer only).
 
-```python
-from packaging.version import Version
-torch_version = torch.__version__
+### **2. DeepSpeed Configuration**
+- Follow the default CPU offload settings. Adjust as needed for your hardware:
+    ```json
+    "fp16": {
+        "enabled": false,
+        "loss_scale_window": 100,
+        "initial_scale_power": 6,
+        "hysteresis": 1
+    },
+    "bf16": {
+        "enabled": true
+    }
+    ```
+  - Use **BF16** for GPUs from the Ampere generation or newer (e.g., A6000), and **FP16** for older GPUs (e.g., V100).
+- Adjust `offload_parameter` as needed for memory management across multiple GPUs.
 
-if Version(torch_version) < Version("2.4.0"):
-    torch_amp_custom_fwd = torch.cuda.amp.custom_fwd
-    torch_amp_custom_bwd = torch.cuda.amp.custom_bwd
-else:
-    torch_amp_custom_fwd = torch.amp.custom_fwd(device_type="cuda")
-    torch_amp_custom_bwd = torch.amp.custom_bwd(device_type="cuda")
+### **3. Run the Experiment**
+1. Execute the script:
+    ```bash
+    bash run.sh
+    ```
+   Example output:
+    ```log
+    [RESULT] Peak VRAM Usage(per gpu): 4664.49 MB
+    [RESULT] Avg Iteration Latency(total): 9.81 s
+    [RESULT] Each Iteration Latency (rank0): [9.80996334599331]
+    [RESULT] Tokens(total): 32768
+    [RESULT] Throughput(total): 3340.28 (token/s)
+    ```
 
-class Unsloth_Offloaded_Gradient_Checkpointer(torch.autograd.Function):
-    """
-    This class is inspired by or based on the `Unsloth_Offloaded_Gradient_Checkpointer` implementation.
+2. To monitor CPU memory usage:
+    ```bash
+    bash memory_monitor.sh
+    ```
+   Run it concurrently with `run.sh` to track CPU usage.
 
-    Original code licensed under LGPL.
-    Description of the original code: Saves VRAM by smartly offloading to RAM with minimal performance impact.
-
-    Modifications:
-    - Add support to multiple cuda device -> replace hard coded "cuda:0"
-    - Updated documentation for clarity and adjusted logic for specific performance needs.
-
-    Original Source: https://github.com/unslothai/unsloth-zoo/blob/main/unsloth_zoo/gradient_checkpointing.py#L145
-
-    License: LGPL
-    """
-    @staticmethod
-    @torch_amp_custom_fwd
-    def forward(ctx, forward_function, hidden_states, *args):
-        device = hidden_states.device
-        saved_hidden_states = hidden_states.to("cpu", non_blocking = True)
-        with torch.no_grad():
-            output = forward_function(hidden_states, *args)
-        ctx.save_for_backward(saved_hidden_states)
-        ctx.forward_function = forward_function
-        ctx.args = args
-        ctx.device = device
-        return output
-    pass
-
-    @staticmethod
-    @torch_amp_custom_bwd
-    def backward(ctx, dY):
-        (hidden_states,) = ctx.saved_tensors
-        hidden_states = hidden_states.to(ctx.device, non_blocking = True).detach()
-        hidden_states.requires_grad_(True)
-        with torch.enable_grad():
-            (output,) = ctx.forward_function(hidden_states, *ctx.args)
-        torch.autograd.backward(output, dY)
-        return (None, hidden_states.grad,) + (None,)*len(ctx.args)
-    pass
-pass
-```
-
-### **2. Modifications to `src/transformers/models/llama/modeling_llama.py`**
-
-#### Import Updates
-```python
-from ...modeling_utils import PreTrainedModel, Unsloth_Offloaded_Gradient_Checkpointer
-```
-
-#### Add New Attribute in `LlamaModel`
-```python
-class LlamaModel(LlamaPreTrainedModel):
-    def __init__(self, config: LlamaConfig):
-        ...
-        self.offload_gradient_checkpointing = False  # Add this
-```
-
-#### Add Enable Function
-```python
-def offload_gradient_checkpointing_enable(self):
-    self.offload_gradient_checkpointing = True
-```
-
-#### Update Decoder Inference Logic
-```python
-for decoder_layer in self.layers[:self.config.num_hidden_layers]:
-    if output_hidden_states:
-        all_hidden_states += (hidden_states,)
-
-    if self.gradient_checkpointing and self.training:
-        if self.offload_gradient_checkpointing:
-            layer_outputs = Unsloth_Offloaded_Gradient_Checkpointer.apply(
-                decoder_layer,
-                hidden_states,
-                causal_mask,
-                position_ids,
-                past_key_values,
-                output_attentions,
-                use_cache,
-                cache_position,
-                position_embeddings,
-            )
-        else:
-            layer_outputs = self._gradient_checkpointing_func(
-                decoder_layer.__call__,
-                hidden_states,
-                causal_mask,
-                position_ids,
-                past_key_values,
-                output_attentions,
-                use_cache,
-                cache_position,
-                position_embeddings,
-            )
-    else:
-        layer_outputs = decoder_layer(
-            hidden_states,
-            attention_mask=causal_mask,
-            position_ids=position_ids,
-            past_key_value=past_key_values,
-            output_attentions=output_attentions,
-            use_cache=use_cache,
-            cache_position=cache_position,
-            position_embeddings=position_embeddings,
-            **flash_attn_kwargs,
-        )
-    hidden_states = layer_outputs[0]
-```
+### **4. Notes**
+- Ensure compatibility with your hardware when enabling advanced features like Flash Attention 2 or BF16.
+- For optimal results, experiment with different batch sizes and gradient accumulation settings.

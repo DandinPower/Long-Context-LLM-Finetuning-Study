@@ -1,3 +1,13 @@
+'''
+Modified Gradient Checkpointing Utility:
+Based on original implementation from Unsloth Zoo: https://github.com/unslothai/unsloth-zoo/blob/main/unsloth_zoo/gradient_checkpointing.py
+
+Modifications: Adjusted gradient checkpointing to support additional functionalities (multiple GPU).
+
+This program is distributed under the GNU Lesser General Public License (LGPL), version 3 or later.
+You are free to redistribute and/or modify this program under the terms of the LGPL as published by the Free Software Foundation.
+'''
+
 import torch
 from packaging.version import Version
 torch_version = torch.__version__
@@ -9,21 +19,7 @@ else:
     torch_amp_custom_fwd = torch.amp.custom_fwd(device_type="cuda")
     torch_amp_custom_bwd = torch.amp.custom_bwd(device_type="cuda")
 
-class Unsloth_Offloaded_Gradient_Checkpointer(torch.autograd.Function):
-    """
-    This class is inspired by or based on the `Unsloth_Offloaded_Gradient_Checkpointer` implementation.
-
-    Original code licensed under LGPL.
-    Description of the original code: Saves VRAM by smartly offloading to RAM with minimal performance impact.
-
-    Modifications:
-    - Add support to multiple cuda device -> replace hard coded "cuda:0"
-    - Updated documentation for clarity and adjusted logic for specific performance needs.
-
-    Original Source: https://github.com/unslothai/unsloth-zoo/blob/main/unsloth_zoo/gradient_checkpointing.py#L145
-
-    License: LGPL
-    """
+class Offloaded_Gradient_Checkpointer(torch.autograd.Function):
     @staticmethod
     @torch_amp_custom_fwd
     def forward(ctx, forward_function, hidden_states, *args):
@@ -36,7 +32,6 @@ class Unsloth_Offloaded_Gradient_Checkpointer(torch.autograd.Function):
         ctx.args = args
         ctx.device = device
         return output
-    pass
 
     @staticmethod
     @torch_amp_custom_bwd
@@ -48,17 +43,13 @@ class Unsloth_Offloaded_Gradient_Checkpointer(torch.autograd.Function):
             (output,) = ctx.forward_function(hidden_states, *ctx.args)
         torch.autograd.backward(output, dY)
         return (None, hidden_states.grad,) + (None,)*len(ctx.args)
-    pass
-pass
 
 @torch._disable_dynamo
-def unsloth_offloaded_gradient_checkpoint(function, *args, use_reentrant = None, **kwargs):
-    return Unsloth_Offloaded_Gradient_Checkpointer.apply(function, *args)
-pass
+def offloaded_gradient_checkpoint(function, *args, use_reentrant = None, **kwargs):
+    return Offloaded_Gradient_Checkpointer.apply(function, *args)
 
-def patch_unsloth_gradient_checkpointing():
-    print("Patched gradient checkpointing func to offloaded gradient checkpointing!")
+def patch_offloaded_gradient_checkpointing():
     import torch.utils
     import transformers.modeling_utils
-    torch.utils.checkpoint.checkpoint = unsloth_offloaded_gradient_checkpoint
-    transformers.modeling_utils.checkpoint = unsloth_offloaded_gradient_checkpoint
+    torch.utils.checkpoint.checkpoint = offloaded_gradient_checkpoint
+    transformers.modeling_utils.checkpoint = offloaded_gradient_checkpoint

@@ -2,7 +2,7 @@ from torch.nn import Module
 from transformers import AutoModelForCausalLM
 from transformers.integrations.deepspeed import HfDeepSpeedConfig
 from liger_kernel.transformers import AutoLigerKernelForCausalLM
-from .monkey_patch import patch_unsloth_gradient_checkpointing
+from .offload_grad_checkpoint import patch_offloaded_gradient_checkpointing
 
 def create_model_by_deepspeed(ds_config: dict, model_name: str, liger_kernel: bool, gradient_checkpointing: bool, offload_gradient_checkpointing: bool, flash_attn_2: bool) -> Module:
     assert model_name is not None, "model_name must be provided"
@@ -26,7 +26,7 @@ def create_model_by_deepspeed(ds_config: dict, model_name: str, liger_kernel: bo
 
     if offload_gradient_checkpointing:
         assert gradient_checkpointing, "Need to enable gradient_checkpointing with offload_gradient_checkpointing"
-        patch_unsloth_gradient_checkpointing()
+        patch_offloaded_gradient_checkpointing()
 
     if gradient_checkpointing:
         model.gradient_checkpointing_enable()

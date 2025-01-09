@@ -11,8 +11,8 @@ def get_vocab_size(model_name: str) -> int:
     return len(vocab)
 
 def get_dummy_inputs_and_labels(batch_size: int, max_seq_length: int, vocab_size: int) -> Tuple[torch.Tensor, torch.Tensor]:
-    inputs = torch.randint(0, vocab_size, (batch_size, max_seq_length))
-    labels = torch.randint(0, vocab_size, (batch_size, max_seq_length))
+    inputs = torch.zeros((batch_size, max_seq_length), dtype=torch.long)
+    labels = torch.zeros((batch_size, max_seq_length), dtype=torch.long)
     return inputs, labels
 
 def set_random_seed(seed):
