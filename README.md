@@ -139,3 +139,13 @@ This study explores cost-effective finetuning using **commodity-level hardware**
 ### **4. Notes**
 - Ensure compatibility with your hardware when enabling advanced features like Flash Attention 2 or BF16.
 - For optimal results, experiment with different batch sizes and gradient accumulation settings.
+
+## 🔮 **Future Directions**
+
+- [ ] **Gradient Accumulation on GPU**: Investigate whether enabling gradient accumulation retains gradients on the GPU. The source code indicates this might occur in `partition_gradients`, but further verification and testing are required to confirm behavior and implications.
+  
+- [ ] **Reduce Bucket Size in Multi-GPU Scenarios**: Explore whether increasing the reduce bucket size improves backward pass performance in multi-GPU scenarios. Understanding the impact of this parameter on communication and computation trade-offs is critical.
+
+- [ ] **Stage 3 with No Offload (Multi-GPU Training for 8B)**: Analyze the speed improvements achievable by enabling DeepSpeed ZeRO Stage 3 without offload parameters in a 4×A6000 setup. Each GPU storing 3.74 GB suggests potential for optimization without memory bottlenecks.
+
+- [ ] **Comparison to LoRA Performance**: Evaluate whether following the proposed setup achieves training performance close to LoRA-based finetuning. The key distinction involves moving gradients to the CPU and updating them there, potentially impacting throughput and efficiency.
