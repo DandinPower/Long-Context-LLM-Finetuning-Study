@@ -34,6 +34,7 @@ This study explores cost-effective finetuning using **commodity-level hardware**
 |---------------|-----------------|-----------|-----------|--------------|-------------|
 | Setup 1       | 8×V100 16GB     | 128GB     | 92        | 481 GB       | 6.5 TB      |
 | Setup 2       | 4×A6000 48GB    | 196GB     | 56        | 429.5 GB     | 1.1 TB      |
+| Setup 3       | 8XA100 40GB SXM4 | 320GB    | 124       | 1.9 TB       | 6.6 TB      |
 
 ### **4. Optimization Techniques**
 - **Liger kernel** for efficient computation. ([Reference](https://github.com/linkedin/Liger-Kernel))
@@ -48,6 +49,14 @@ This study explores cost-effective finetuning using **commodity-level hardware**
 | **4×A6000** | Llama3.1 8B   | 128000         | 24128.66               | 317.53                 | 1775.17              | 1          |
 | **8×V100**  | Llama3.1 8B   | 32768            | 7711.63                    | 286.43   | 2793.22                  | 1        |
 | **8×V100**  | Llama3.1 8B   | 49152            | 10794.13                    | 351.68   | 2342.40                  | 1        |
+| **1×A100(all gpu)**  | Llama3.1 8B   | 16384            | TBD                    | TBD   | TBD                  | TBD        |
+| **1×A100**  | Llama3.1 8B   | 16384            | TBD                    | TBD   | TBD                  | TBD        |
+| **1×A100**  | Llama3.1 8B   | 128000            | TBD                    | TBD   | TBD                  | 1        |
+| **2×A100**  | Llama3.1 8B   | 128000            | TBD                    | TBD   | TBD                  | 1        |
+| **4×A100**  | Llama3.1 8B   | 128000            | TBD                    | TBD   | TBD                  | 1        |
+| **7×A100**  | Llama3.1 8B   | 128000            | TBD                    | TBD   | TBD                  | 1        |
+| **8×A100**  | Llama3.1 8B   | 128000            | TBD                    | TBD   | TBD                  | 1        |
+
 
 ## ⚙️ **Installation**
 
