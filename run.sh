@@ -1,19 +1,20 @@
-NUM_GPUS=1
+NUM_GPUS=4
 
 # MODEL_NAME=HuggingFaceTB/SmolLM2-360M-Instruct
 # MODEL_NAME=Qwen/Qwen2.5-0.5B-Instruct
 # MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct
-MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
+# MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
+MODEL_NAME=Qwen/Qwen2.5-14B-Instruct
 
-SYSTEM_TYPE=cpu_gpus1_1B
+SYSTEM_TYPE=cpu_gpus1_14B
 DS_CONFIG_PATH=configs/cpu.json
 
 PER_DEVICE_TRAIN_BATCH_SIZE=1
-NUM_TRAIN_ITERATIONS=2
+NUM_TRAIN_ITERATIONS=3
 GRADIENT_ACCUMULATION_STEPS=1
-MAX_SEQ_LENGTH=4096
+MAX_SEQ_LENGTH=128000
 
 LEARNING_RATE=1e-4
 WEIGHT_DECAY=0.01
@@ -29,5 +30,5 @@ deepspeed --num_gpus $NUM_GPUS training.py --model_name $MODEL_NAME --world_size
     --learning_rate $LEARNING_RATE --weight_decay $WEIGHT_DECAY --beta_0 $BETA_0 --beta_1 $BETA_1 \
     --liger_kernel \
     --gradient_checkpointing \
-    --offload_gradient_checkpointing \
     --flash_attn_2 \
+    --offload_gradient_checkpointing \
