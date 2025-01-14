@@ -146,8 +146,8 @@ This study explores cost-effective finetuning using **commodity-level hardware**
   
 - [ ] **Reduce Bucket Size in Multi-GPU Scenarios**: Explore whether increasing the reduce bucket size improves backward pass performance in multi-GPU scenarios. Understanding the impact of this parameter on communication and computation trade-offs is critical.
 
-- [ ] **Stage 3 with No Offload (Multi-GPU Training for 8B)**: Analyze the speed improvements achievable by enabling DeepSpeed ZeRO Stage 3 without offload parameters in a 4×A6000 setup. Each GPU storing 3.74 GB suggests potential for optimization without memory bottlenecks.
+- [ ] **Stage 3 with No Offload (Multi-GPU Training for 8B)**: Analyze the speed improvements achievable by enabling DeepSpeed ZeRO Stage 3 without offload parameters in a 4×A6000 setup. Each GPU only storing more 3.74 GB suggests potential for optimization without memory bottlenecks.
 
-- [ ] **Comparison to LoRA Performance**: Evaluate whether following the proposed setup achieves training performance close to LoRA-based finetuning. The key distinction involves moving gradients to the CPU and updating them there, potentially impacting throughput and efficiency.
+- [ ] **Comparison to LoRA Performance**: Evaluate whether following the proposed setup achieves training performance close to LoRA-based finetuning. Because the step on CPU is really quick, and the GPU computation is same as LoRA.
 
-- [ ] **Comparison with All-in-GPU**: Although GPUs can utilize 4D parallelism (including context parallelism) in the same configuration, CPU offloading may still offer advantages due to data parallelism. Conduct experiments using Picotron.
+- [ ] **Comparison with All-in-GPU**: Although GPUs can utilize 4D parallelism (including context parallelism) in the same configuration, CPU offloading may still offer advantages due to data parallelism. But GPUs 4D parallelism should only run 1 batch. Conduct experiments using Picotron.
