@@ -143,10 +143,12 @@ This study explores cost-effective finetuning using **commodity-level hardware**
 
 ## 🔮 **Future Directions**
 
-- [] **Comparison of Throughpt(Token/s) and Memory Efficiency with LoRA**: Implement LoRA support to test and compare different configurations during LoRA training.
+- [ ] **Study the overhead caused by Offloaded Checkpointing**: In long-context scenarios, even with `gradient_checkpointing`, the checkpointed data can become significant as it scales with context length. By offloading, it may allow greater flexibility in scaling the batch size or context length. However, the time required to fetch checkpointed values during the backward pass could introduce significant delays. It might be worth exploring prefetching strategies during the backward pass to mitigate this overhead.
 
-- [] **Optimize Configuration for CPU Offloading**: Current experiments involve offloading all parameters to the CPU. However, some parameters can still reside on GPUs. Future work should explore fine-tuning parameter settings such as `stage3_param_persistence_threshold`, `stage3_max_live_parameters`, `stage3_prefetch_bucket_size`, `sub_group_size`, and `reduce_bucket_size`. Additionally, consider disabling `offload param` in multi-GPU scenarios, as partitioning should allow each GPU to store only a minimal set of parameters.
+- [ ] **Comparison of Throughpt(Token/s) and Memory Efficiency with LoRA**: Implement LoRA support to test and compare different configurations during LoRA training.
 
-- [ ] **Comparison with All-in-GPUs**: While GPUs can leverage 4D parallelism (including context parallelism) in the same configuration, CPU offloading may offer advantages through data parallelism. However, 4D parallelism on GPUs is typically limited to processing a single batch at a time. Conduct comparative experiments using frameworks like Picotron or Nanotron.
+- [ ] **Optimize Configuration for CPU Offloading**: Current experiments involve offloading all parameters to the CPU. However, some parameters can still reside on GPUs. Future work should explore fine-tuning parameter settings such as `stage3_param_persistence_threshold`, `stage3_max_live_parameters`, `stage3_prefetch_bucket_size`, `sub_group_size`, and `reduce_bucket_size`. Additionally, consider disabling `offload param` in multi-GPU scenarios, as partitioning should allow each GPU to store only a minimal set of parameters.
 
 - [ ] **Gradient Accumulation on GPUs**: Investigate whether enabling gradient accumulation retains gradients on GPUs. The source code suggests this might occur in `partition_gradients`, but further testing and verification are needed to understand its behavior and potential implications.
+
+- [ ] **Comparison with All-in-GPUs**: While GPUs can leverage 4D parallelism (including context parallelism) in the same configuration, CPU offloading may offer advantages through data parallelism. However, 4D parallelism on GPUs is typically limited to processing a single batch at a time. Conduct comparative experiments using frameworks like Picotron or Nanotron.
