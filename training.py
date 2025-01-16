@@ -66,7 +66,9 @@ class DeepSpeedTrainer:
         print_verbose(f'[DEBUG] rank[{args.local_rank}]after barrier', verbose)
 
         print_verbose('[INIT] Create Model', verbose)
-        self.model = create_model_by_deepspeed(ds_config, model_name=args.model_name, liger_kernel=args.liger_kernel, gradient_checkpointing=args.gradient_checkpointing, \
+        if args.lora_dim > 0:
+            print_verbose(f'[INIT] Create LoRA Model with dim: {args.lora_dim}', verbose)
+        self.model = create_model_by_deepspeed(ds_config, model_name=args.model_name, lora_dim=args.lora_dim, liger_kernel=args.liger_kernel, gradient_checkpointing=args.gradient_checkpointing, \
                                                offload_gradient_checkpointing= args.offload_gradient_checkpointing, flash_attn_2=args.flash_attn_2)
         print_verbose('[INIT] Model created successfully', verbose)
 
@@ -133,6 +135,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_train_iterations", type=int, help="The number of iterations to train for.", required=True)
     parser.add_argument('--gradient_accumulation_steps', type=int, help='Gradient accumulation steps.', required=True)
     parser.add_argument("--max_seq_len", type=int, help="The maximum sequence length.", required=True)
+    parser.add_argument("--lora_dim", type=int, help="Specifies the LoRA dimension. A value of 0 indicates that it is disabled.", default=0)
     parser.add_argument('--learning_rate', type=float, help='Learning rate.', required=True)
     parser.add_argument('--weight_decay', type=float, help='Weight decay.', required=True)
     parser.add_argument('--beta_0', type=float, help='Beta 0.', required=True)

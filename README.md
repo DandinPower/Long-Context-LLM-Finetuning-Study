@@ -142,12 +142,10 @@ This study explores cost-effective finetuning using **commodity-level hardware**
 
 ## 🔮 **Future Directions**
 
-- [ ] **Gradient Accumulation on GPU**: Investigate whether enabling gradient accumulation retains gradients on the GPU. The source code indicates this might occur in `partition_gradients`, but further verification and testing are required to confirm behavior and implications.
-  
-- [ ] **Reduce Bucket Size in Multi-GPU Scenarios**: Explore whether increasing the reduce bucket size improves backward pass performance in multi-GPU scenarios. Understanding the impact of this parameter on communication and computation trade-offs is critical.
+- [] **Comparison of Throughpt(Token/s) and Memory Efficiency with LoRA**: Implement LoRA support to test and compare different configurations during LoRA training.
 
-- [ ] **Stage 3 with No Offload (Multi-GPU Training for 8B)**: Analyze the speed improvements achievable by enabling DeepSpeed ZeRO Stage 3 without offload parameters in a 4×A6000 setup. Each GPU only storing more 3.74 GB suggests potential for optimization without memory bottlenecks.
+- [] **Optimize Configuration for CPU Offloading**: Current experiments involve offloading all parameters to the CPU. However, some parameters can still reside on GPUs. Future work should explore fine-tuning parameter settings such as `stage3_param_persistence_threshold`, `stage3_max_live_parameters`, `stage3_prefetch_bucket_size`, `sub_group_size`, and `reduce_bucket_size`. Additionally, consider disabling `offload param` in multi-GPU scenarios, as partitioning should allow each GPU to store only a minimal set of parameters.
 
-- [ ] **Comparison to LoRA Performance**: Evaluate whether following the proposed setup achieves training performance close to LoRA-based finetuning. Because the step on CPU is really quick, and the GPU computation is same as LoRA.
+- [ ] **Comparison with All-in-GPUs**: While GPUs can leverage 4D parallelism (including context parallelism) in the same configuration, CPU offloading may offer advantages through data parallelism. However, 4D parallelism on GPUs is typically limited to processing a single batch at a time. Conduct comparative experiments using frameworks like Picotron or Nanotron.
 
-- [ ] **Comparison with All-in-GPU**: Although GPUs can utilize 4D parallelism (including context parallelism) in the same configuration, CPU offloading may still offer advantages due to data parallelism. But GPUs 4D parallelism should only run 1 batch. Conduct experiments using Picotron.
+- [ ] **Gradient Accumulation on GPUs**: Investigate whether enabling gradient accumulation retains gradients on GPUs. The source code suggests this might occur in `partition_gradients`, but further testing and verification are needed to understand its behavior and potential implications.
