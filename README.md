@@ -88,6 +88,7 @@ This study explores cost-effective finetuning using **commodity-level hardware**
   4. **`PER_DEVICE_TRAIN_BATCH_SIZE`**: Sets the micro-batch size for each device; the total batch size is `PER_DEVICE_TRAIN_BATCH_SIZE × NUM_GPUS`.
   5. **`GRADIENT_ACCUMULATION_STEPS`**: Number of forward/backward passes to accumulate gradients before updating weights.
   6. **`MAX_SEQ_LENGTH`**: The desired context length for training.
+  7. **`LORA_DIM`**: Specifies the LoRA dimension. A value of 0 indicates that it is disabled.", default=0)
   7. **Optimization Parameters**:
       - `LEARNING_RATE=1e-4`
       - `WEIGHT_DECAY=0.01`
