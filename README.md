@@ -143,6 +143,8 @@ This study explores cost-effective finetuning using **commodity-level hardware**
 
 ## 🔮 **Future Directions**
 
+- [ ] **Anaylze GPU Utilization**: When using an offloading system, the main concern is that GPU utilization may decrease. However, it is not that simple, as moving more data out of VRAM allows for larger batch sizes, which have the potential to increase utilization in other ways. This makes it an interesting area to explore and analyze in depth.
+
 - [ ] **Study the overhead caused by Offloaded Checkpointing**: In long-context scenarios, even with `gradient_checkpointing`, the checkpointed data can become significant as it scales with context length. By offloading, it may allow greater flexibility in scaling the batch size or context length. However, the time required to fetch checkpointed values during the backward pass could introduce significant delays. It might be worth exploring prefetching strategies during the backward pass to mitigate this overhead.
 
 - [ ] **Comparison of Throughpt(Token/s) and Memory Efficiency with LoRA**: Implement LoRA support to test and compare different configurations during LoRA training.
