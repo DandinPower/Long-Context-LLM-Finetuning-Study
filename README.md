@@ -77,6 +77,14 @@ This study explores cost-effective finetuning using **commodity-level hardware**
     pip install flash-attn
     ```
 
+3. **Install Zero Overhead Pinned Memory**
+
+    ```bash
+    git clone https://github.com/DandinPower/zero-overhead-pinned-memory.git
+    cd zero-overhead-pinned-memory
+    pip install .
+    ```
+
 ## 🚀 **Run the Experiments**
 
 ### **1. Configure Settings**
@@ -100,6 +108,7 @@ This study explores cost-effective finetuning using **commodity-level hardware**
       - `--gradient_checkpointing` for on-GPU gradient checkpointing.
       - `--offload_gradient_checkpointing` is used to further offload checkpointed values to the CPU. Keep --gradient_checkpointing enabled, as it patches the original PyTorch checkpoint function.
       - `--flash_attn_2` for Flash Attention 2 (Ampere GPUs and newer only).
+      - `--zero_overhead_pin_memory` for zero overhead pinned memory allocation.
 
 ### **2. DeepSpeed Configuration**
 - Follow the default CPU offload settings. Adjust as needed for your hardware:

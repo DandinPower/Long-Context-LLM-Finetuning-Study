@@ -14,6 +14,8 @@ from utils.optimizer_utils import create_optimizer
 from utils.ds_utils import get_ds_config_from_path
 from utils.utils import set_random_seed, print_rank_0, print_verbose, get_vocab_size, get_dummy_inputs_and_labels, get_snap_shot_name, is_offload_optimizer
 
+from zero_overhead_pinned_memory import patch_deepspeed_zero_overhead_pinned_memory
+
 SNAP_SHOT_DIRS = "snap_shots"
 
 class DeepSpeedTrainer:
@@ -64,6 +66,9 @@ class DeepSpeedTrainer:
         print_verbose(f'[DEBUG] rank[{args.local_rank}]before barrier', verbose)
         distributed.barrier()
         print_verbose(f'[DEBUG] rank[{args.local_rank}]after barrier', verbose)
+
+        if args.zero_overhead_pin_memory:
+            patch_deepspeed_zero_overhead_pinned_memory()
 
         print_verbose('[INIT] Create Model', verbose)
         if args.lora_dim > 0:
@@ -144,6 +149,7 @@ if __name__ == "__main__":
     parser.add_argument('--gradient_checkpointing', action='store_true', help='Enable HF gradient checkpointing for model.')
     parser.add_argument('--offload_gradient_checkpointing', action='store_true', help='Enable Unsloth offload gradient checkpointing for model.')
     parser.add_argument('--flash_attn_2', action='store_true', help='Enable Flash Attention 2.')
+    parser.add_argument('--zero_overhead_pin_memory', action='store_true', help='Enable Zero Overhead Pinned Memory for deepspeed.')
     parser.add_argument("--lr_scheduler_type", type=SchedulerType, default="cosine", help="The scheduler type to use.", choices=["linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"])
     parser.add_argument("--num_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler.")
     parser.add_argument("--seed", type=int, default=42, help="A seed for reproducible training.")

@@ -5,8 +5,9 @@ NUM_GPUS=1
 # MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
-MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
-# MODEL_NAME=Qwen/Qwen2.5-14B-Instruct
+# MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
+MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-1M
+# MODEL_NAME=Qwen/Qwen2.5-32B-Instruct
 
 SYSTEM_TYPE=cpu_gpus1_8B
 DS_CONFIG_PATH=configs/cpu.json
@@ -16,7 +17,7 @@ NUM_TRAIN_ITERATIONS=3
 GRADIENT_ACCUMULATION_STEPS=1
 MAX_SEQ_LENGTH=32768
 
-LORA_DIM=8
+LORA_DIM=0
 
 LEARNING_RATE=1e-4
 WEIGHT_DECAY=0.01
@@ -35,3 +36,4 @@ deepspeed --num_gpus $NUM_GPUS training.py --model_name $MODEL_NAME --world_size
     --offload_gradient_checkpointing \
     --flash_attn_2 \
     --liger_kernel \
+    --zero_overhead_pin_memory \
