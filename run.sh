@@ -1,4 +1,3 @@
-NUM_GPUS=1
 
 # MODEL_NAME=HuggingFaceTB/SmolLM2-360M-Instruct
 # MODEL_NAME=Qwen/Qwen2.5-0.5B-Instruct
@@ -6,16 +5,17 @@ NUM_GPUS=1
 # MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
-MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-1M
+# MODEL_NAME=Qwen/Qwen2.5-7B-Instruct-1M
 # MODEL_NAME=Qwen/Qwen2.5-32B-Instruct
-
-SYSTEM_TYPE=cpu_gpus1_8B
-DS_CONFIG_PATH=configs/cpu.json
-
-PER_DEVICE_TRAIN_BATCH_SIZE=1
-NUM_TRAIN_ITERATIONS=3
+MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-1M
+NUM_GPUS=1
+PER_DEVICE_TRAIN_BATCH_SIZE=40
 GRADIENT_ACCUMULATION_STEPS=1
-MAX_SEQ_LENGTH=32768
+MAX_SEQ_LENGTH=8192
+
+SYSTEM_TYPE=cpu_gpus1_7B
+DS_CONFIG_PATH=configs/cpu.json
+NUM_TRAIN_ITERATIONS=3
 
 LORA_DIM=0
 

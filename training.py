@@ -15,6 +15,7 @@ from utils.ds_utils import get_ds_config_from_path
 from utils.utils import set_random_seed, print_rank_0, print_verbose, get_vocab_size, get_dummy_inputs_and_labels, get_snap_shot_name, is_offload_optimizer
 
 from zero_overhead_pinned_memory import patch_deepspeed_zero_overhead_pinned_memory
+from tqdm import tqdm
 
 SNAP_SHOT_DIRS = "snap_shots"
 
@@ -25,6 +26,8 @@ class DeepSpeedTrainer:
         self.model = None
         self.optimizer = None
         self.vocab_size = None
+        self.fwd_progress_bar = None
+        self.bwd_progress_bar = None
 
     def _set_device(self, local_rank: int) -> None:
         assert local_rank is not None, "local_rank must be provided"
@@ -44,9 +47,49 @@ class DeepSpeedTrainer:
         args.train_micro_batch_size_per_gpu = args.per_device_train_batch_size
         return args
     
+    def _init_progress_bar(self, global_rank: int) -> None:
+        # Hook functions
+        def _on_layer_forward(module, inp, out, layer_idx):
+            self.fwd_progress_bar.update(1)
+            self.fwd_progress_bar.set_description(f"[TRAIN] Forward – Layer {layer_idx+1}/{self.num_layers}")
+            return None
+
+        def _on_layer_backward(module, grad_input, grad_output, layer_idx):
+            self.bwd_progress_bar.update(1)
+            self.bwd_progress_bar.set_description(f"[TRAIN] Backward – Layer {layer_idx+1}/{self.num_layers}")
+            return None
+        
+        def _fake_layer_forward(module, inp, out, layer_idx):
+            return None
+
+        def _fake_layer_backward(module, grad_input, grad_output, layer_idx):
+            return None
+        
+        # if global_rank == 0:    # only log in global_rank 0
+        self.num_layers = len(self.model.model.layers)
+        for idx, layer in enumerate(self.model.model.layers):
+            if global_rank == 0:
+                fh = layer.register_forward_hook(lambda mod, inp, out, idx=idx: _on_layer_forward(mod, inp, out, idx))
+                bh = layer.register_full_backward_hook(lambda mod, gin, gout, idx=idx: _on_layer_backward(mod, gin, gout, idx))
+            else:   # to prevent the wrong synchronize behavior
+                fh = layer.register_forward_hook(lambda mod, inp, out, idx=idx: _fake_layer_forward(mod, inp, out, idx))
+                bh = layer.register_full_backward_hook(lambda mod, gin, gout, idx=idx: _fake_layer_backward(mod, gin, gout, idx))
+    
+    def _start_progress_bar(self, is_fwd: bool, global_rank: int) -> None:
+        if global_rank == 0:
+            if is_fwd:
+                self.fwd_progress_bar = tqdm(total=self.num_layers, desc="[TRAIN] Forward Decoder Layer Progress")  # total steps = embedding + layers + lm_head
+            else:
+                self.bwd_progress_bar = tqdm(total=self.num_layers, desc="[TRAIN] Backward Decoder Layer Progress")  # total steps = embedding + layers + lm_head
+
+    def _stop_progress_bar(self, is_fwd: bool, global_rank: int) -> None:
+        if global_rank == 0:
+            if is_fwd:
+                self.fwd_progress_bar.close()
+            else:
+                self.bwd_progress_bar.close()
+
     def init(self, args: Namespace, verbose: bool=True) -> None:
-        # os.environ['PYTORCH_NO_CUDA_MEMORY_CACHING'] = "1"
-        # os.environ['PYTORCH_CUDA_ALLOC_CONF'] = "expandable_segments:True"
         torch.cuda.reset_peak_memory_stats()
         torch.cuda.memory._record_memory_history()
         
@@ -76,6 +119,8 @@ class DeepSpeedTrainer:
         self.model = create_model_by_deepspeed(ds_config, model_name=args.model_name, lora_dim=args.lora_dim, liger_kernel=args.liger_kernel, gradient_checkpointing=args.gradient_checkpointing, \
                                                offload_gradient_checkpointing= args.offload_gradient_checkpointing, flash_attn_2=args.flash_attn_2)
         print_verbose('[INIT] Model created successfully', verbose)
+        
+        self._init_progress_bar(args.global_rank)
 
         print_verbose('[INIT] Create Optimizer', verbose)
         self.optimizer = create_optimizer(self.model, lr=args.learning_rate, weight_decay=args.weight_decay, betas_0=args.beta_0, betas_1=args.beta_1, offload_optimizer=self.offload_optimizer) 
@@ -102,15 +147,37 @@ class DeepSpeedTrainer:
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
             start_time = time.perf_counter()
-            print_rank_0(f"[TRAIN] Forward", args.global_rank)
+            print_rank_0(f"[TRAIN] Forward Start", args.global_rank)
+            self._start_progress_bar(is_fwd=True, global_rank=args.global_rank)
+            temp_start_time = time.perf_counter()
+            ### FWD
             outputs = self.model(inputs, labels=labels)
             loss = outputs.loss
-            print_rank_0(f"[TRAIN] Backward ", args.global_rank)
+            ### FWD
+            temp_end_time = time.perf_counter()
+            temp_duration = temp_end_time - temp_start_time
+            self._stop_progress_bar(is_fwd=True, global_rank=args.global_rank)
+            print_rank_0(f"[TRAIN] Forward Stop - Duration {temp_duration:.2f}s", args.global_rank)
+            print_rank_0(f"[TRAIN] Backward Start", args.global_rank)
+            self._start_progress_bar(is_fwd=False, global_rank=args.global_rank)
+            temp_start_time = time.perf_counter()
+            ### BWD
             self.model.backward(loss)
-            print_rank_0(f"[TRAIN] Step ", args.global_rank)
+            ### BWD
+            temp_end_time = time.perf_counter()
+            temp_duration = temp_end_time - temp_start_time
+            self._stop_progress_bar(is_fwd=False, global_rank=args.global_rank)
+            print_rank_0(f"[TRAIN] Backward Stop - Duration {temp_duration:.2f}s", args.global_rank)
+            print_rank_0(f"[TRAIN] Optimizer Step Start", args.global_rank)
+            temp_start_time = time.perf_counter()
+            ### STEP
             self.model.step()
             dist.barrier()
+            ### STEP
             end_time = time.perf_counter()
+            temp_end_time = time.perf_counter()
+            temp_duration = temp_end_time - temp_start_time
+            print_rank_0(f"[TRAIN] Optimizer Step Stop - Duration {temp_duration:.2f}s", args.global_rank)
             iteration_latency.append(end_time - start_time)
         
         iteration_latency.pop(0)
