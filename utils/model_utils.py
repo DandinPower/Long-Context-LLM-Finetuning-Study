@@ -24,7 +24,8 @@ def create_model_by_deepspeed(ds_config: dict, model_name: str, lora_dim: int, l
     if flash_attn_2:
         model = model_class.from_pretrained(model_name, use_cache=False, attn_implementation="flash_attention_2")
     else:
-        model = model_class.from_pretrained(model_name, use_cache=False)
+        # model = model_class.from_pretrained(model_name, use_cache=False)
+        model = model_class.from_pretrained(model_name, use_cache=False, attn_implementation="eager")
 
     if lora_dim > 0:
         model = convert_linear_layer_to_lora(model, "layers.", lora_dim)

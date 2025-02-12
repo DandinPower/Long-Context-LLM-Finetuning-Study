@@ -5,13 +5,17 @@
 # MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
-# MODEL_NAME=Qwen/Qwen2.5-7B-Instruct-1M
 # MODEL_NAME=Qwen/Qwen2.5-32B-Instruct
-MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-1M
-NUM_GPUS=1
-PER_DEVICE_TRAIN_BATCH_SIZE=40
+# MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct
+# MODEL_NAME=Qwen/Qwen2.5-7B-Instruct-1M
+# MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-1M
+# MODEL_NAME=google/gemma-2-9b-it
+MODEL_NAME=mistralai/Mistral-Nemo-Instruct-2407
+
+NUM_GPUS=2
+PER_DEVICE_TRAIN_BATCH_SIZE=8
 GRADIENT_ACCUMULATION_STEPS=1
-MAX_SEQ_LENGTH=8192
+MAX_SEQ_LENGTH=16384
 
 SYSTEM_TYPE=cpu_gpus1_7B
 DS_CONFIG_PATH=configs/cpu.json
@@ -34,6 +38,6 @@ deepspeed --num_gpus $NUM_GPUS training.py --model_name $MODEL_NAME --world_size
     --learning_rate $LEARNING_RATE --weight_decay $WEIGHT_DECAY --beta_0 $BETA_0 --beta_1 $BETA_1 \
     --gradient_checkpointing \
     --offload_gradient_checkpointing \
-    --flash_attn_2 \
     --liger_kernel \
     --zero_overhead_pin_memory \
+    --flash_attn_2 \

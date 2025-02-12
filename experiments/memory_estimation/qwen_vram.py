@@ -133,10 +133,17 @@ class Qwen25MemoryUsage(BaseMemoryUsage):
         
 if __name__ == "__main__":
     qwen25_memory_usage = Qwen25MemoryUsage()
+    # 1.5B
+    # qwen25_memory_usage.setup_configs(batch=80, max_seq_len=8192, vproj_size=393216, intermediate_size=8960, hidden_size=1536, \
+    #     vocab_size=151936, grad_norm_buffer_size=250000000, grad_accum_dtype=DataType.bfloat16, compute_dtype=DataType.bfloat16)
     # 7B
     # qwen25_memory_usage.setup_configs(batch=10, max_seq_len=32768, vproj_size=1835008, intermediate_size=18944, hidden_size=3584, \
     #     vocab_size=152064, grad_norm_buffer_size=250000000, grad_accum_dtype=DataType.bfloat16, compute_dtype=DataType.bfloat16)
-    qwen25_memory_usage.setup_configs(batch=40, max_seq_len=8192, vproj_size=5242880, intermediate_size=13824, hidden_size=5120, \
+    # 14B
+    # qwen25_memory_usage.setup_configs(batch=40, max_seq_len=8192, vproj_size=5242880, intermediate_size=13824, hidden_size=5120, \
+    #     vocab_size=152064, grad_norm_buffer_size=250000000, grad_accum_dtype=DataType.bfloat16, compute_dtype=DataType.bfloat16)
+    # 32B
+    qwen25_memory_usage.setup_configs(batch=1, max_seq_len=131072, vproj_size=5242880, intermediate_size=27648, hidden_size=5120, \
         vocab_size=152064, grad_norm_buffer_size=250000000, grad_accum_dtype=DataType.bfloat16, compute_dtype=DataType.bfloat16)
     qwen25_memory_usage.calculate_memory_usage()
     print(qwen25_memory_usage.get_memory_usage_report())

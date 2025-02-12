@@ -192,9 +192,9 @@ class DeepSpeedTrainer:
         print_rank_0(f"[RESULT] Tokens(total): {total_tokens}", args.global_rank)
         print_rank_0(f"[RESULT] Throughput(total): {throughput:.2f} (token/s)", args.global_rank)
 
-        snapshot = torch.cuda.memory._snapshot()
-        with open(f"./{SNAP_SHOT_DIRS}/{get_snap_shot_name(args)}_rank{args.global_rank}.pickle", 'wb') as f:
-            dump(snapshot, f)
+        # snapshot = torch.cuda.memory._snapshot()
+        # with open(f"./{SNAP_SHOT_DIRS}/{get_snap_shot_name(args)}_rank{args.global_rank}.pickle", 'wb') as f:
+        #     dump(snapshot, f)
 
 if __name__ == "__main__":
     parser = ArgumentParser()

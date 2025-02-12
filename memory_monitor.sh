@@ -47,7 +47,7 @@ while true; do
     echo "Memory Statistics:"
     echo "Initial memory usage: $(format_memory $initial_used)"
     echo "Maximum memory usage: $(format_memory $max_mem)"
-    echo "Maximum Monitor memory usage: $(format_memory $maximum_stage_used)"
+    echo -e "\e[31mMaximum Monitor memory usage: $(format_memory $maximum_stage_used)\e[0m"
     echo "Current memory usage: $(format_memory $current_used)"
     echo "Current Monitor memory usage: $(format_memory $current_stage_used)"
     
