@@ -13,6 +13,7 @@ from utils.model_utils import create_model_by_deepspeed
 from utils.optimizer_utils import create_optimizer
 from utils.ds_utils import get_ds_config_from_path
 from utils.utils import set_random_seed, print_rank_0, print_verbose, get_vocab_size, get_dummy_inputs_and_labels, get_snap_shot_name, is_offload_optimizer
+from utils.numa_allocation import patch_deepspeed_cpu_tensor_allocation
 
 from zero_overhead_pinned_memory import patch_deepspeed_zero_overhead_pinned_memory
 from tqdm import tqdm
@@ -113,6 +114,9 @@ class DeepSpeedTrainer:
         if args.zero_overhead_pin_memory:
             patch_deepspeed_zero_overhead_pinned_memory()
 
+        if args.numa_aware_allocation:
+            patch_deepspeed_cpu_tensor_allocation()
+
         print_verbose('[INIT] Create Model', verbose)
         if args.lora_dim > 0:
             print_verbose(f'[INIT] Create LoRA Model with dim: {args.lora_dim}', verbose)
@@ -137,9 +141,12 @@ class DeepSpeedTrainer:
         assert self.vocab_size is not None, "vocab_size must be set"
         assert args is not None, "args must be provided"
 
-        print_verbose("[TRAIN] Start Running training", verbose)
+        print_verbose(f"[TRAIN] Start Running training on pid: {os.getpid()}", verbose)
 
         iteration_latency = []
+        fwd_duration = []
+        bwd_duration = []
+        step_duration = []
         self.model.train()
         for step in range(args.num_train_iterations):
             print_rank_0(f"[TRAIN] Start Running Step: {step}", args.global_rank)
@@ -157,6 +164,7 @@ class DeepSpeedTrainer:
             temp_end_time = time.perf_counter()
             temp_duration = temp_end_time - temp_start_time
             self._stop_progress_bar(is_fwd=True, global_rank=args.global_rank)
+            fwd_duration.append(temp_duration)
             print_rank_0(f"[TRAIN] Forward Stop - Duration {temp_duration:.2f}s", args.global_rank)
             print_rank_0(f"[TRAIN] Backward Start", args.global_rank)
             self._start_progress_bar(is_fwd=False, global_rank=args.global_rank)
@@ -167,6 +175,7 @@ class DeepSpeedTrainer:
             temp_end_time = time.perf_counter()
             temp_duration = temp_end_time - temp_start_time
             self._stop_progress_bar(is_fwd=False, global_rank=args.global_rank)
+            bwd_duration.append(temp_duration)
             print_rank_0(f"[TRAIN] Backward Stop - Duration {temp_duration:.2f}s", args.global_rank)
             print_rank_0(f"[TRAIN] Optimizer Step Start", args.global_rank)
             temp_start_time = time.perf_counter()
@@ -177,11 +186,18 @@ class DeepSpeedTrainer:
             end_time = time.perf_counter()
             temp_end_time = time.perf_counter()
             temp_duration = temp_end_time - temp_start_time
+            step_duration.append(temp_duration)
             print_rank_0(f"[TRAIN] Optimizer Step Stop - Duration {temp_duration:.2f}s", args.global_rank)
             iteration_latency.append(end_time - start_time)
         
         iteration_latency.pop(0)
+        fwd_duration.pop(0)
+        bwd_duration.pop(0)
+        step_duration.pop(0)
         total_latency = sum(iteration_latency)
+        avg_fwd_duration = sum(fwd_duration) / len(fwd_duration)
+        avg_bwd_duration = sum(bwd_duration) / len(bwd_duration)
+        avg_step_duration = sum(step_duration) / len(step_duration)
         max_memory = torch.cuda.max_memory_allocated()
         avg_iteration_latency = (total_latency / len(iteration_latency)) * args.gradient_accumulation_steps
         total_tokens = args.train_batch_size * args.max_seq_len
@@ -189,6 +205,7 @@ class DeepSpeedTrainer:
         print_rank_0(f"[RESULT] Peak VRAM Usage(per gpu): {max_memory / 1024**2:.2f} MB", args.global_rank)
         print_rank_0(f"[RESULT] Avg Iteration Latency(total): {avg_iteration_latency:.2f} s", args.global_rank)
         print_rank_0(f"[RESULT] Each Iteration Latency (rank0): {iteration_latency}", args.global_rank)
+        print_rank_0(f"[RESULT] Avg FWD,BWD,STEP Duration: {avg_fwd_duration:.2f},{avg_bwd_duration:.2f},{avg_step_duration:.2f} s", args.global_rank)
         print_rank_0(f"[RESULT] Tokens(total): {total_tokens}", args.global_rank)
         print_rank_0(f"[RESULT] Throughput(total): {throughput:.2f} (token/s)", args.global_rank)
 
@@ -217,6 +234,7 @@ if __name__ == "__main__":
     parser.add_argument('--offload_gradient_checkpointing', action='store_true', help='Enable Unsloth offload gradient checkpointing for model.')
     parser.add_argument('--flash_attn_2', action='store_true', help='Enable Flash Attention 2.')
     parser.add_argument('--zero_overhead_pin_memory', action='store_true', help='Enable Zero Overhead Pinned Memory for deepspeed.')
+    parser.add_argument('--numa_aware_allocation', action='store_true', help='Enable NUMA aware allocation for cpu tensor.')
     parser.add_argument("--lr_scheduler_type", type=SchedulerType, default="cosine", help="The scheduler type to use.", choices=["linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"])
     parser.add_argument("--num_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler.")
     parser.add_argument("--seed", type=int, default=42, help="A seed for reproducible training.")
