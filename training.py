@@ -13,7 +13,8 @@ from utils.model_utils import create_model_by_deepspeed
 from utils.optimizer_utils import create_optimizer
 from utils.ds_utils import get_ds_config_from_path
 from utils.utils import set_random_seed, print_rank_0, print_verbose, get_vocab_size, get_dummy_inputs_and_labels, get_snap_shot_name, is_offload_optimizer
-from utils.numa_allocation import patch_deepspeed_cpu_tensor_allocation
+from utils.numa_allocation_patch import patch_deepspeed_cpu_tensor_allocation, get_numastat_output
+from utils import offload_grad_checkpoint
 
 from zero_overhead_pinned_memory import patch_deepspeed_zero_overhead_pinned_memory
 from tqdm import tqdm
@@ -110,6 +111,8 @@ class DeepSpeedTrainer:
         print_verbose(f'[DEBUG] rank[{args.local_rank}]before barrier', verbose)
         distributed.barrier()
         print_verbose(f'[DEBUG] rank[{args.local_rank}]after barrier', verbose)
+
+        offload_grad_checkpoint.buffer_manager.setup_buffer(num_layers=args.num_layers, batch_size=args.train_micro_batch_size_per_gpu, seq_length=args.max_seq_len, hidden_size=args.hidden_size, dtype=torch.bfloat16, rank=args.global_rank, is_numa=args.numa_aware_allocation)
 
         if args.zero_overhead_pin_memory:
             patch_deepspeed_zero_overhead_pinned_memory()
@@ -209,6 +212,8 @@ class DeepSpeedTrainer:
         print_rank_0(f"[RESULT] Tokens(total): {total_tokens}", args.global_rank)
         print_rank_0(f"[RESULT] Throughput(total): {throughput:.2f} (token/s)", args.global_rank)
 
+        print(get_numastat_output())
+
         # snapshot = torch.cuda.memory._snapshot()
         # with open(f"./{SNAP_SHOT_DIRS}/{get_snap_shot_name(args)}_rank{args.global_rank}.pickle", 'wb') as f:
         #     dump(snapshot, f)
@@ -218,6 +223,8 @@ if __name__ == "__main__":
     parser.add_argument('--local_rank', type=int, default=-1, help='Local rank of the process in distributed training.', required=True)
     parser.add_argument('--world_size', type=int, default=-1, required=True)
     parser.add_argument('--model_name', type=str, help='Model name or path to load from.', required=True)
+    parser.add_argument("--num_layers", type=int, help="The model decoder layer.", required=True)
+    parser.add_argument("--hidden_size", type=int, help="The model hidden size.", required=True)
     parser.add_argument('--system_type', type=str, required=True)
     parser.add_argument('--ds_config_path', type=str, help='DeepSpeed Config path to load from.', required=True)
     parser.add_argument("--per_device_train_batch_size", type=int, help="Batch size (per device) for the fake training iteration.", required=True)

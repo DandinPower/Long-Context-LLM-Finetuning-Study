@@ -19,12 +19,38 @@ else:
     torch_amp_custom_fwd = torch.amp.custom_fwd(device_type="cuda")
     torch_amp_custom_bwd = torch.amp.custom_bwd(device_type="cuda")
 
+from .numa_allocation_patch import zeros_cpu, zeros_cpu_for_checkpointed_striping_0, zeros_cpu_for_checkpointed_striping_1
+
+class PinnedBufferManager:
+    def __init__(self):
+        pass
+        
+    def setup_buffer(self, num_layers: int, batch_size: int, seq_length: int, hidden_size: int, dtype: torch.dtype, rank: int, is_numa: bool) -> None:
+        buffer_shape = (batch_size, seq_length, hidden_size)
+        if rank % 2 == 0:
+            zeros_cpu_for_checkpointed = zeros_cpu_for_checkpointed_striping_0
+        else:
+            zeros_cpu_for_checkpointed = zeros_cpu_for_checkpointed_striping_1
+        if is_numa == False:    # use default policy
+            zeros_cpu_for_checkpointed = zeros_cpu
+        self.buffers = [zeros_cpu_for_checkpointed(shape=buffer_shape, dtype=dtype, pin_memory=True) for _ in range(num_layers)]
+        
+    def get_buffer(self) -> torch.Tensor:
+        assert len(self.buffers) > 0, "Run out of buffer"
+        return self.buffers.pop()
+    
+    def release_buffer(self, buffer: torch.Tensor) -> None:
+        self.buffers.append(buffer)
+
+buffer_manager = PinnedBufferManager()
+
 class Offloaded_Gradient_Checkpointer(torch.autograd.Function):
     @staticmethod
     @torch_amp_custom_fwd
     def forward(ctx, forward_function, hidden_states, *args):
         device = hidden_states.device
-        saved_hidden_states = hidden_states.to("cpu", non_blocking = True)
+        saved_hidden_states = buffer_manager.get_buffer()
+        saved_hidden_states.copy_(hidden_states, non_blocking=True)
         with torch.no_grad():
             output = forward_function(hidden_states, *args)
         ctx.save_for_backward(saved_hidden_states)
@@ -36,8 +62,9 @@ class Offloaded_Gradient_Checkpointer(torch.autograd.Function):
     @staticmethod
     @torch_amp_custom_bwd
     def backward(ctx, dY):
-        (hidden_states,) = ctx.saved_tensors
-        hidden_states = hidden_states.to(ctx.device, non_blocking = True).detach()
+        (saved_hidden_states,) = ctx.saved_tensors
+        hidden_states = saved_hidden_states.to(ctx.device, non_blocking = True).detach()
+        buffer_manager.release_buffer(saved_hidden_states)
         hidden_states.requires_grad_(True)
         with torch.enable_grad():
             (output,) = ctx.forward_function(hidden_states, *ctx.args)
