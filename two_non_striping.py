@@ -40,38 +40,38 @@ def zeros_cpu_for_checkpointed_striping_0(shape: tuple[int], dtype: torch.dtype,
     This one doesn't need to be patched because it is already patched from the offload_grad_checkpoint.
     ngpus * batch * seq * hidden * dtype
     """
-    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[3])
 
 def zeros_cpu_for_checkpointed_striping_1(shape: tuple[int], dtype: torch.dtype, pin_memory: bool) -> torch.Tensor:
     """
     This one doesn't need to be patched because it is already patched from the offload_grad_checkpoint.
     ngpus * batch * seq * hidden * dtype
     """
-    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[4])
 
 def _zeros_cpu_for_compute_gradients_striping_0(shape: tuple[int], dtype: torch.dtype, pin_memory: bool) -> torch.Tensor:
     """
     2 * model_size (if gradient accumulation dtype is bf16)
     """
-    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[3])
 
 def _zeros_cpu_for_compute_gradients_striping_1(shape: tuple[int], dtype: torch.dtype, pin_memory: bool) -> torch.Tensor:
     """
     2 * model_size (if gradient accumulation dtype is bf16)
     """
-    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[4])
 
 def _zeros_cpu_for_compute_weights_striping_0(shape: tuple[int], dtype: torch.dtype, pin_memory: bool) -> torch.Tensor:
     """
     2 * model_size (if bf16/fp16 mixed precision)
     """
-    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[0])
 
 def _zeros_cpu_for_compute_weights_striping_1(shape: tuple[int], dtype: torch.dtype, pin_memory: bool) -> torch.Tensor:
     """
     2 * model_size (if bf16/fp16 mixed precision)
     """
-    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[0])
 
 def _zeros_cpu_for_master_gradients(shape: tuple[int], dtype: torch.dtype, pin_memory: bool) -> torch.Tensor:
     """
@@ -89,13 +89,13 @@ def _zeros_cpu_for_momentums(shape: tuple[int], dtype: torch.dtype, pin_memory: 
     """
     4 * model_size
     """
-    return zeros_numa_on_nodemask_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, interleave_numa_nodes=[0,3,4])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[3])
 
 def _zeros_cpu_for_variances(shape: tuple[int], dtype: torch.dtype, pin_memory: bool) -> torch.Tensor:
     """
     4 * model_size
     """
-    return zeros_numa_on_nodemask_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, interleave_numa_nodes=[0,3,4])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[4])
 
 def patch_deepspeed_cpu_tensor_allocation(rank: int):
     print("Apply numa awareness allocation deepspeed")

@@ -118,7 +118,7 @@ class DeepSpeedTrainer:
             patch_deepspeed_zero_overhead_pinned_memory()
 
         if args.numa_aware_allocation:
-            patch_deepspeed_cpu_tensor_allocation()
+            patch_deepspeed_cpu_tensor_allocation(args.global_rank)
 
         print_verbose('[INIT] Create Model', verbose)
         if args.lora_dim > 0:
