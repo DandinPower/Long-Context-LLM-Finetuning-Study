@@ -13,10 +13,10 @@ from utils.model_utils import create_model_by_deepspeed
 from utils.optimizer_utils import create_optimizer
 from utils.ds_utils import get_ds_config_from_path
 from utils.utils import set_random_seed, print_rank_0, print_verbose, get_vocab_size, get_dummy_inputs_and_labels, get_snap_shot_name, is_offload_optimizer
+from utils.zero_overhead_patch import patch_deepspeed_zero_overhead_pinned_memory
 from utils.numa_allocation_patch import patch_deepspeed_cpu_tensor_allocation, get_numastat_output
 from utils import offload_grad_checkpoint
 
-from zero_overhead_pinned_memory import patch_deepspeed_zero_overhead_pinned_memory
 from tqdm import tqdm
 
 SNAP_SHOT_DIRS = "snap_shots"
@@ -193,10 +193,12 @@ class DeepSpeedTrainer:
             print_rank_0(f"[TRAIN] Optimizer Step Stop - Duration {temp_duration:.2f}s", args.global_rank)
             iteration_latency.append(end_time - start_time)
         
-        iteration_latency.pop(0)
-        fwd_duration.pop(0)
-        bwd_duration.pop(0)
-        step_duration.pop(0)
+        POP_ITERATION = 2
+        for _ in range(POP_ITERATION):
+            iteration_latency.pop(0)
+            fwd_duration.pop(0)
+            bwd_duration.pop(0)
+            step_duration.pop(0)
         total_latency = sum(iteration_latency)
         avg_fwd_duration = sum(fwd_duration) / len(fwd_duration)
         avg_bwd_duration = sum(bwd_duration) / len(bwd_duration)
