@@ -16,14 +16,14 @@ HIDDEN_SIZE=3584
 # NUM_LAYERS=40
 # HIDDEN_SIZE=5120
 
-NUM_GPUS=1
-PER_DEVICE_TRAIN_BATCH_SIZE=8
+NUM_GPUS=2
+PER_DEVICE_TRAIN_BATCH_SIZE=1
 GRADIENT_ACCUMULATION_STEPS=1
-MAX_SEQ_LENGTH=4096
+MAX_SEQ_LENGTH=32768
 
 SYSTEM_TYPE=cpu_gpus1_7B
 DS_CONFIG_PATH=configs/cpu.json
-NUM_TRAIN_ITERATIONS=5
+NUM_TRAIN_ITERATIONS=6
 
 LORA_DIM=0
 
@@ -35,7 +35,7 @@ BETA_1=0.95
 # ensure the cache is clean
 rm -rf ~/.cache/torch_extensions/
 
-numactl --interleave=0,3 deepspeed --num_gpus $NUM_GPUS training.py --model_name $MODEL_NAME --world_size $NUM_GPUS --system_type $SYSTEM_TYPE --ds_config_path $DS_CONFIG_PATH \
+numactl --interleave=0,1 deepspeed --num_gpus $NUM_GPUS training.py --model_name $MODEL_NAME --world_size $NUM_GPUS --system_type $SYSTEM_TYPE --ds_config_path $DS_CONFIG_PATH \
     --per_device_train_batch_size $PER_DEVICE_TRAIN_BATCH_SIZE \
     --num_layers $NUM_LAYERS --hidden_size $HIDDEN_SIZE \
     --num_train_iterations $NUM_TRAIN_ITERATIONS --gradient_accumulation_steps $GRADIENT_ACCUMULATION_STEPS --max_seq_len $MAX_SEQ_LENGTH \
@@ -46,4 +46,4 @@ numactl --interleave=0,3 deepspeed --num_gpus $NUM_GPUS training.py --model_name
     --liger_kernel \
     --flash_attn_2 \
     --zero_overhead_pin_memory \
-    --numa_aware_allocation
+    # --numa_aware_allocation
