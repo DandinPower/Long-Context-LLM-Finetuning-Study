@@ -5,25 +5,33 @@
 # MODEL_NAME=meta-llama/Llama-3.2-1B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
 # MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
+
 # MODEL_NAME=Qwen/Qwen2.5-32B-Instruct
+# NUM_LAYERS=64
+# HIDDEN_SIZE=5120
+
 # MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct
 # MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-1M
+# NUM_LAYERS=48
+# HIDDEN_SIZE=5120
 # MODEL_NAME=google/gemma-2-9b-it
+
 MODEL_NAME=Qwen/Qwen2.5-7B-Instruct-1M
 NUM_LAYERS=28
 HIDDEN_SIZE=3584
+
 # MODEL_NAME=mistralai/Mistral-Nemo-Instruct-2407
 # NUM_LAYERS=40
 # HIDDEN_SIZE=5120
 
-NUM_GPUS=1
-PER_DEVICE_TRAIN_BATCH_SIZE=80
+NUM_GPUS=2
+PER_DEVICE_TRAIN_BATCH_SIZE=1
 GRADIENT_ACCUMULATION_STEPS=1
 MAX_SEQ_LENGTH=4096
 
 SYSTEM_TYPE=cpu_gpus1_7B
 DS_CONFIG_PATH=configs/cpu.json
-NUM_TRAIN_ITERATIONS=6
+NUM_TRAIN_ITERATIONS=3
 
 LORA_DIM=0
 
@@ -35,7 +43,10 @@ BETA_1=0.95
 # ensure the cache is clean
 rm -rf ~/.cache/torch_extensions/
 
-numactl --weighted-interleave=0,3 deepspeed --num_gpus $NUM_GPUS training.py --model_name $MODEL_NAME --world_size $NUM_GPUS --system_type $SYSTEM_TYPE --ds_config_path $DS_CONFIG_PATH \
+echo 1 > /sys/kernel/mm/mempolicy/weighted_interleave/node0
+echo 2 > /sys/kernel/mm/mempolicy/weighted_interleave/node3
+
+numactl --weighted-interleave=0,1,2 deepspeed --num_gpus $NUM_GPUS training.py --model_name $MODEL_NAME --world_size $NUM_GPUS --system_type $SYSTEM_TYPE --ds_config_path $DS_CONFIG_PATH \
     --per_device_train_batch_size $PER_DEVICE_TRAIN_BATCH_SIZE \
     --num_layers $NUM_LAYERS --hidden_size $HIDDEN_SIZE \
     --num_train_iterations $NUM_TRAIN_ITERATIONS --gradient_accumulation_steps $GRADIENT_ACCUMULATION_STEPS --max_seq_len $MAX_SEQ_LENGTH \

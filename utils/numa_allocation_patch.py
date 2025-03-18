@@ -89,13 +89,13 @@ def _zeros_cpu_for_momentums(shape: tuple[int], dtype: torch.dtype, pin_memory: 
     """
     4 * model_size
     """
-    return zeros_numa_on_nodemask_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, interleave_numa_nodes=[0])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[])
 
 def _zeros_cpu_for_variances(shape: tuple[int], dtype: torch.dtype, pin_memory: bool) -> torch.Tensor:
     """
     4 * model_size
     """
-    return zeros_numa_on_nodemask_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, interleave_numa_nodes=[0])
+    return zeros_numa_onnode_cpu(shape=shape, dtype=dtype, pin_memory=pin_memory, priority_numa_nodes=[])
 
 def patch_deepspeed_cpu_tensor_allocation(rank: int):
     print("Apply numa awareness allocation deepspeed")
