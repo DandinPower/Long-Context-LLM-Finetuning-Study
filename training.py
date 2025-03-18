@@ -13,8 +13,7 @@ from utils.model_utils import create_model_by_deepspeed
 from utils.optimizer_utils import create_optimizer
 from utils.ds_utils import get_ds_config_from_path
 from utils.utils import set_random_seed, print_rank_0, print_verbose, get_vocab_size, get_dummy_inputs_and_labels, get_snap_shot_name, is_offload_optimizer
-
-from zero_overhead_pinned_memory import patch_deepspeed_zero_overhead_pinned_memory
+from utils.zero_overhead_pinned_patch import patch_deepspeed_zero_overhead_pinned_memory
 from tqdm import tqdm
 
 SNAP_SHOT_DIRS = "snap_shots"

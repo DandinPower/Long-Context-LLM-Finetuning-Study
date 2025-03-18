@@ -8,17 +8,17 @@
 # MODEL_NAME=Qwen/Qwen2.5-32B-Instruct
 # MODEL_NAME=Qwen/Qwen2.5-1.5B-Instruct
 # MODEL_NAME=Qwen/Qwen2.5-7B-Instruct-1M
-# MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-1M
+MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-1M
 # MODEL_NAME=google/gemma-2-9b-it
-MODEL_NAME=mistralai/Mistral-Nemo-Instruct-2407
+# MODEL_NAME=mistralai/Mistral-Nemo-Instruct-2407
 
 NUM_GPUS=2
-PER_DEVICE_TRAIN_BATCH_SIZE=8
+PER_DEVICE_TRAIN_BATCH_SIZE=1
 GRADIENT_ACCUMULATION_STEPS=1
-MAX_SEQ_LENGTH=16384
+MAX_SEQ_LENGTH=512
 
-SYSTEM_TYPE=cpu_gpus1_7B
-DS_CONFIG_PATH=configs/cpu.json
+SYSTEM_TYPE=cpu_gpus2_7B
+DS_CONFIG_PATH=configs/gpu.json
 NUM_TRAIN_ITERATIONS=3
 
 LORA_DIM=0
@@ -37,7 +37,7 @@ deepspeed --num_gpus $NUM_GPUS training.py --model_name $MODEL_NAME --world_size
     --lora_dim $LORA_DIM \
     --learning_rate $LEARNING_RATE --weight_decay $WEIGHT_DECAY --beta_0 $BETA_0 --beta_1 $BETA_1 \
     --gradient_checkpointing \
-    --offload_gradient_checkpointing \
     --liger_kernel \
     --zero_overhead_pin_memory \
     --flash_attn_2 \
+    # --offload_gradient_checkpointing \
